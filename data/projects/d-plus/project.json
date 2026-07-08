@@ -1,0 +1,7 @@
+{
+  "id": "d-plus",
+  "title": "D+ Illegal Website Monitoring System",
+  "description": "A team project that monitors browser history for blacklisted websites and reports encrypted records to an admin dashboard. I worked on encryption and backend logic.",
+  "tags": ["Python", "Backend", "Encryption", "SQLite", "AWS", "Security"],
+  "link": "#"
+}

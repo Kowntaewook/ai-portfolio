@@ -4,6 +4,7 @@
 
 data/projects/ 디렉토리의 각 프로젝트 폴더에서 project.json을 읽어
 하나의 projects.json 파일로 통합합니다.
+README.md가 있으면 content 필드로 함께 포함합니다.
 
 Usage:
     python data/build.py
@@ -16,20 +17,17 @@ from pathlib import Path
 def build_projects_json():
     """프로젝트 폴더들을 스캔하여 projects.json 생성"""
 
-    # 경로 설정
     data_dir = Path(__file__).parent
     root_dir = data_dir.parent
     projects_dir = data_dir / "projects"
     output_file = data_dir / "projects.json"
     web_output_file = root_dir / "web" / "data" / "projects.json"
 
-    # projects/ 디렉토리가 없으면 에러
     if not projects_dir.exists():
         print(f"❌ Error: {projects_dir} 디렉토리가 없습니다.")
         print("   data/projects/ 디렉토리를 먼저 생성해주세요.")
         return False
 
-    # 모든 프로젝트 수집
     projects = []
     project_folders = sorted([d for d in projects_dir.iterdir() if d.is_dir()])
 
@@ -40,21 +38,22 @@ def build_projects_json():
 
     print(f"📂 {len(project_folders)}개의 프로젝트 폴더를 발견했습니다.\n")
 
-    # 각 프로젝트 폴더 처리
     for project_folder in project_folders:
         project_json_path = project_folder / "project.json"
+        readme_path = project_folder / "README.md"
 
-        # project.json 파일 확인
         if not project_json_path.exists():
             print(f"⚠️  Skip: {project_folder.name}/ (project.json 없음)")
             continue
 
-        # JSON 파일 읽기
         try:
-            with open(project_json_path, "r", encoding="utf-8") as f:
+            with open(project_json_path, "r", encoding="utf-8-sig") as f:
                 project_data = json.load(f)
 
-            # 필수 필드 검증
+            if readme_path.exists():
+                with open(readme_path, "r", encoding="utf-8-sig") as f:
+                    project_data["content"] = f.read()
+
             required_fields = ["id", "title", "description", "tags", "link"]
             missing_fields = [field for field in required_fields if field not in project_data]
 
@@ -63,7 +62,6 @@ def build_projects_json():
                 print(f"   누락된 필드: {', '.join(missing_fields)}")
                 continue
 
-            # 프로젝트 추가
             projects.append(project_data)
             print(f"✅ {project_data['id']}: {project_data['title']}")
 
@@ -75,7 +73,6 @@ def build_projects_json():
             print(f"❌ Error: {project_folder.name}/project.json - {str(e)}")
             continue
 
-    # projects.json 생성
     if not projects:
         print("\n❌ 유효한 프로젝트가 하나도 없습니다.")
         return False

@@ -1,0 +1,7 @@
+{
+  "id": "kitsunebi-auto-ctf-solver",
+  "title": "K!$un3b1 Auto CTF Solver",
+  "description": "An automated CTF-solving agent built with Claude Agent SDK and Opus 4.7. It reads challenge files, writes scripts, executes tools, extracts flags, and compares answers automatically across CTF categories.",
+  "tags": ["AI Agent", "CTF", "Automation", "Claude SDK", "Python"],
+  "link": "#"
+}

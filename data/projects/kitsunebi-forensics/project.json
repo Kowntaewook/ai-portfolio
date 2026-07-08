@@ -1,0 +1,7 @@
+{
+  "id": "kitsunebi-forensics",
+  "title": "K!t$un3b1 Forensics CTF Experiment",
+  "description": "A forensics-focused benchmark for the automated CTF solver. The agent solved 14 out of 20 forensic challenges, achieving a 70 percent solve rate with a total cost of 26.15 dollars.",
+  "tags": ["Forensics", "CTF", "Benchmark", "Automation", "AI Agent"],
+  "link": "#"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "linux-forensic-scenario",
+  "title": "Linux Forensic Scenario Analysis",
+  "description": "A Linux incident response project based on UAC artifacts. The analysis covers SSH intrusion, NOPASSWD sudo abuse, ld.so.preload rootkit behavior, hidden processes, and suspicious in-memory payload execution.",
+  "tags": ["Linux Forensics", "UAC", "Rootkit", "Incident Response", "journalctl"],
+  "link": "#"
+}
