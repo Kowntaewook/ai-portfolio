@@ -1,46 +1,171 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>포트폴리오 & AI 챗봇</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&#44428;&#53468;&#50865; | Forensics &amp; Reverse Engineer</title>
+  <link rel="stylesheet" href="./style.css?v=utf8-fix" />
 </head>
 <body>
+  <canvas id="cyber-bg"></canvas>
 
-    <!-- 헤더 섹션 -->
-    <header>
-        <div class="container">
-            <h1>My Research & Project Portfolio</h1>
-            <p>AI 연구 및 개발 프로젝트 아카이브</p>
-        </div>
-    </header>
-
-    <!-- 메인 콘텐츠 (프로젝트 카드 그리드) -->
-    <main class="container">
-        <section id="portfolio-section">
-            <h2>Featured Projects</h2>
-            <div id="projects-grid" class="projects-grid">
-                <!-- app.js에 의해 동적으로 카드가 삽입되는 공간 -->
-                <p class="loading">프로젝트 로딩 중...</p>
-            </div>
-        </section>
-    </main>
-
-    <!-- 푸터 섹션 -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 AI Researcher Portfolio. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <!-- 챗봇 위젯 자리 -->
-    <div id="chatbot-widget" class="chatbot-container">
-        <!-- widget.js에서 동적으로 UI를 주입합니다 -->
+  <header class="site-header">
+    <a class="logo" href="#home">KWON <span>[RESEARCHER]</span></a>
+    <nav>
+      <a href="#skills" data-i18n="nav.skills">// Skills</a>
+      <a href="#projects" data-i18n="nav.projects">// Projects</a>
+      <a href="#timeline" data-i18n="nav.timeline">// Timeline</a>
+      <a href="#contact" data-i18n="nav.contact">// Contact</a>
+    </nav>
+    <div class="header-actions">
+      <button id="lang-toggle" class="lang-toggle" type="button">EN</button>
+      <a class="hire-btn" href="#contact" data-i18n="nav.hire">Hire Me</a>
     </div>
+  </header>
 
-    <!-- 스크립트 연결 -->
-    <script src="app.js"></script>
-    <script src="widget.js"></script>
+  <main>
+    <section id="home" class="hero">
+      <p class="terminal" data-i18n="hero.terminal">terminal INITIALIZING_SEC_PROFILE...</p>
+      <h1 data-i18n="hero.name">&#44428;&#53468;&#50865;</h1>
+      <h2 data-i18n="hero.title">// Forensics & Reverse Engineer</h2>
+      <p class="hero-desc" data-i18n-html="hero.desc">
+        I prioritize facts over assumptions when handling digital evidence.<br />
+        I investigate hidden threats through memory forensics and binary analysis.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#projects" class="btn primary" data-i18n="hero.projects">View Projects</a>
+        <a href="#timeline" class="btn" data-i18n="hero.resume">View Resume</a>
+        <a href="https://myclassesmadebykwontaewook.notion.site/Forensics-Reverse-Engineer-3679ecccd0ca80efa804da61a8e77967?pvs=74" target="_blank" class="btn" data-i18n="hero.notion">Notion Resume</a>
+        <a href="#contact" class="btn" data-i18n="hero.contact">Contact</a>
+      </div>
+    </section>
+
+    <section id="skills" class="section">
+      <div class="section-head">
+        <p data-i18n="skills.kicker">CAPABILITY MATRIX</p>
+        <h2 data-i18n="nav.skills">// Skills</h2>
+      </div>
+
+      <div class="skill-grid">
+        <article class="glass-card">
+          <h3>Digital Forensics</h3>
+          <p data-i18n="skill.forensics.desc">Registry, memory, filesystem, and Windows artifact analysis</p>
+          <div class="tags">
+            <span>Volatility</span><span>KAPE</span><span>RegRipper</span><span>FTK Imager</span><span>Autopsy</span>
+          </div>
+        </article>
+
+        <article class="glass-card">
+          <h3>Reverse Engineering</h3>
+          <p data-i18n="skill.reverse.desc">Static binary analysis, assembly flow analysis, and execution logic tracing</p>
+          <div class="tags">
+            <span>IDA</span><span>Assembly</span><span>C/C++</span><span>PE Analysis</span>
+          </div>
+        </article>
+
+        <article class="glass-card">
+          <h3>Automation</h3>
+          <p data-i18n="skill.auto.desc">CTF solving automation, forensic scripts, and data processing</p>
+          <div class="tags">
+            <span>Python</span><span>PowerShell</span><span>Docker</span><span>AI Agent</span>
+          </div>
+        </article>
+
+        <article class="glass-card">
+          <h3>Network / Artifact</h3>
+          <p data-i18n="skill.network.desc">Packet, log, browser history, and timeline-based incident reconstruction</p>
+          <div class="tags">
+            <span>Wireshark</span><span>HxD</span><span>HashCalc</span><span>Dcode</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="projects" class="section">
+      <div class="section-head">
+        <p data-i18n="projects.kicker">EVIDENCE ARCHIVE</p>
+        <h2 data-i18n="nav.projects">// Projects</h2>
+      </div>
+
+      <div id="project-status" class="project-status">loading ./data/projects.json...</div>
+      <div id="filter-bar" class="filter-bar"></div>
+      <div id="project-grid" class="project-grid"></div>
+    </section>
+
+    <section id="timeline" class="section">
+      <div class="section-head">
+        <p data-i18n="timeline.kicker">ACTIVITY LOG</p>
+        <h2 data-i18n="nav.timeline">// Timeline</h2>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <span>2025</span>
+          <h3 data-i18n="timeline.c.title">Youth IT Contest C Language Gold Prize</h3>
+          <p data-i18n="timeline.c.desc">Verified low-level programming and problem-solving ability.</p>
+        </div>
+        <div class="timeline-item">
+          <span>2025</span>
+          <h3 data-i18n="timeline.rce.title">RCE CTF Cyber Defense Award</h3>
+          <p data-i18n="timeline.rce.desc">Built practical analysis experience through security club and CTF activity.</p>
+        </div>
+        <div class="timeline-item">
+          <span>2025</span>
+          <h3 data-i18n="timeline.ai.title">Youth IT Contest AI Data Analysis Gold Prize</h3>
+          <p data-i18n="timeline.ai.desc">Demonstrated data analysis and AI capability through a project.</p>
+        </div>
+        <div class="timeline-item">
+          <span>2026</span>
+          <h3 data-i18n="timeline.sec.title">CTF / Bug Bounty / Forensics Projects</h3>
+          <p data-i18n="timeline.sec.desc">Participated in CTFs, Bugcrowd VDP reports, and incident analysis projects.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact">
+      <div class="section-head">
+        <p data-i18n="contact.kicker">ESTABLISH_CONNECTION</p>
+        <h2 data-i18n="nav.contact">// Contact</h2>
+      </div>
+      <p data-i18n="contact.desc">Open to job applications, project collaboration, and security analysis inquiries.</p>
+      <div class="hero-actions">
+        <a href="mailto:desigen877@gmail.com" class="btn primary" data-i18n="contact.mail">Send Mail</a>
+        <a href="https://kwontaewook.tistory.com/" class="btn" target="_blank" data-i18n="contact.blog">Open Blog</a>
+        <a href="https://myclassesmadebykwontaewook.notion.site/Forensics-Reverse-Engineer-3679ecccd0ca80efa804da61a8e77967?pvs=74" class="btn" target="_blank" data-i18n="contact.notion">Open Notion Resume</a>
+        <a href="./assets/resume.pdf" id="resume-download" class="btn" download data-i18n="contact.download">Download Resume PDF</a>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-panel">
+      <button id="modal-close" class="modal-close" type="button">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="chat-widget" class="chat-widget">
+    <button id="chat-open" class="chat-open" type="button">AI</button>
+    <div id="chat-panel" class="chat-panel hidden">
+      <div class="chat-head">
+        <div>
+          <strong>SEC_PROFILE BOT</strong>
+          <span>portfolio assistant</span>
+        </div>
+        <button id="chat-close" type="button">&times;</button>
+      </div>
+      <div id="chat-log" class="chat-log">
+        <div class="chat-msg bot" data-i18n-html="chat.hello">Hello. You can ask about my portfolio, projects, skills, and resume.</div>
+      </div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" type="text" autocomplete="off" placeholder="Tell me about your projects" />
+        <button type="submit">SEND</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="./script.js?v=project-lang-kr"></script>
 </body>
 </html>
