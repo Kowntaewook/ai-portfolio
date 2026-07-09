@@ -1,4 +1,4 @@
-﻿python-frontmatter==1.1.0
+python-frontmatter==1.1.0
 PyYAML==6.0.2
 streamlit>=1.36.0
 chromadb>=0.5.5
