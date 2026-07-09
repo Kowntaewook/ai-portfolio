@@ -104,20 +104,30 @@ class RAGEngine:
 
         documents = []
         for idx, project in enumerate(projects):
-            # 프로젝트 정보를 텍스트로 변환
-            content = f"""프로젝트: {project.get('title', 'N/A')}
-설명: {project.get('description', 'N/A')}
-태그: {', '.join(project.get('tags', []))}
-링크: {project.get('link', 'N/A')}"""
+            # 프로젝트 정보를 텍스트로 변환 (content 필드 포함)
+            title = project.get('title', 'N/A')
+            description = project.get('description', 'N/A')
+            tags = ', '.join(project.get('tags', []))
+            detailed_content = project.get('content', '')
+            
+            # 상세 내용과 함께 구성
+            content = f"""프로젝트: {title}
+
+설명: {description}
+
+태그: {tags}
+
+상세 정보:
+{detailed_content}"""
 
             # Document 객체 생성 (메타데이터에 출처 정보 포함)
             # ChromaDB는 메타데이터에 리스트를 허용하지 않으므로 문자열로 변환
             doc = Document(
                 page_content=content,
                 metadata={
-                    'source': project.get('title', f'project_{idx}'),
+                    'source': title,
                     'project_id': idx,
-                    'tags': ', '.join(project.get('tags', []))  # 리스트 → 문자열
+                    'tags': tags  # 리스트 → 문자열
                 }
             )
             documents.append(doc)

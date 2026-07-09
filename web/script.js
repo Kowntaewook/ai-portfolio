@@ -2,6 +2,7 @@ const NOTION_RESUME_URL = "https://myclassesmadebykwontaewook.notion.site/Forens
 
 let allProjects = [];
 let currentFilter = "All";
+let projectStats = { views: {}, likes: {}, liked_users: {} };
 let currentLang = localStorage.getItem("portfolio_lang") || "ko";
 
 const I18N = {
@@ -83,15 +84,6 @@ const I18N = {
   }
 };
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
 function applyLanguage() {
   document.documentElement.lang = currentLang;
 
@@ -115,7 +107,10 @@ function applyLanguage() {
 function switchLanguage() {
   currentLang = currentLang === "ko" ? "en" : "ko";
   localStorage.setItem("portfolio_lang", currentLang);
+
   applyLanguage();
+  renderFilters();
+  renderProjects();
 }
 
 function getCategory(project) {
@@ -128,6 +123,103 @@ function getCategory(project) {
   return "Security";
 }
 
+const PROJECT_I18N_PATCH = {
+  ko: {
+    "cve-2026-41651-analysis": {
+      "title": "CVE-2026-41651 Pack2TheRoot 분석",
+      "description": "PackageKit의 TOCTOU 레이스 컨디션으로 발생하는 로컬 권한 상승 취약점을 분석한 프로젝트입니다. 버그 체인, 공격 흐름, 흔적 표시, 탐지 명령어, 대응 방안을 정리했습니다.",
+      "tags": ["CVE 분석", "Linux", "권한 상승", "PackageKit", "TOCTOU"]
+    },
+    "d-plus": {
+      "title": "D+ 불법 웹사이트 모니터링 시스템",
+      "description": "브라우저스트 웹사이트 방문 기록을 모니터링하고, 수집 기록을 암호화하여 관리자 대시보드로 보고하는 팀 프로젝트입니다. 저는 암호화와 백엔드 로직을 담당했습니다.",
+      "tags": ["Python", "백엔드", "암호화", "SQLite", "AWS", "보안"]
+    },
+    "kitsunebi-auto-ctf-solver": {
+      "title": "K!$un3b1 자동 CTF 솔버",
+      "description": "Claude Agent SDK와 Opus 4.7 기반으로 CTF 문제 파일을 읽고, 스크립트 작성 및 도구 실행을 자동화하여 플래그를 추출하는 에이전트를 구현했습니다.",
+      "tags": ["AI 에이전트", "CTF", "자동화", "Claude SDK", "Python"]
+    },
+    "kitsunebi-forensics": {
+      "title": "K!t$un3b1 포렌식 CTF 실험",
+      "description": "자동 CTF 솔버를 포렌식 과제에 적용한 벤치마크입니다. 에이전트는 20개 중 14개 문제를 해결하여 70%의 해결률을 기록했습니다.",
+      "tags": ["포렌식", "CTF", "벤치마크", "자동화", "AI 에이전트"]
+    },
+    "linux-forensic-scenario": {
+      "title": "Linux 침해사고 포렌식 시나리오 분석",
+      "description": "UAC 에스컬레이션을 기반으로 Linux 서버 시나리오의 SSH 침투, NOPASSWD sudo 남용, ld.so.preload 루트킷 동작을 분석한 프로젝트입니다.",
+      "tags": ["Linux 포렌식", "UAC", "루트킷", "침해사고 대응", "journalctl"]
+    }
+  },
+  en: {
+    "cve-2026-41651-analysis": {
+      "title": "CVE-2026-41651 Pack2TheRoot Analysis",
+      "description": "A vulnerability analysis project for PackageKit local privilege escalation caused by a TOCTOU race condition. The report covers the bug chain, exploit flow, IoCs, detection commands, and mitigation.",
+      "tags": ["CVE Analysis", "Linux", "LPE", "PackageKit", "TOCTOU"]
+    },
+    "d-plus": {
+      "title": "D+ Illegal Website Monitoring System",
+      "description": "A team project that monitors browser history for blacklisted websites and reports encrypted records to an admin dashboard. I worked on encryption and backend logic.",
+      "tags": ["Python", "Backend", "Encryption", "SQLite", "AWS", "Security"]
+    },
+    "kitsunebi-auto-ctf-solver": {
+      "title": "K!$un3b1 Auto CTF Solver",
+      "description": "An automated CTF-solving agent built with Claude Agent SDK and Opus 4.7. It reads challenge files, writes scripts, executes tools, extracts flags, and compares answers automatically across CTF categories.",
+      "tags": ["AI Agent", "CTF", "Automation", "Claude SDK", "Python"]
+    },
+    "kitsunebi-forensics": {
+      "title": "K!t$un3b1 Forensics CTF Experiment",
+      "description": "A forensics-focused benchmark for the automated CTF solver. The agent solved 14 out of 20 forensic challenges, achieving a 70 percent solve rate with a total cost of 26.15 dollars.",
+      "tags": ["Forensics", "CTF", "Benchmark", "Automation", "AI Agent"]
+    },
+    "linux-forensic-scenario": {
+      "title": "Linux Forensic Scenario Analysis",
+      "description": "A Linux incident response project based on UAC artifacts. The analysis covers SSH intrusion, NOPASSWD sudo abuse, ld.so.preload rootkit behavior, hidden processes, and suspicious in-memory payload execution.",
+      "tags": ["Linux Forensics", "UAC", "Rootkit", "Incident Response", "journalctl"]
+    }
+  }
+};
+
+function projectLang() {
+  return currentLang === "ko" ? "ko" : "en";
+}
+
+function localProject(project) {
+  const lang = projectLang();
+  const translated = PROJECT_I18N_PATCH[lang][project.id] || {};
+  return {
+    ...project,
+    title: translated.title || project.title,
+    description: translated.description || project.description,
+    tags: translated.tags || project.tags || []
+  };
+}
+
+function categoryLabel(category) {
+  if (currentLang !== "ko") return category;
+
+  const map = {
+    "All": "전체",
+    "CVE": "CVE 분석",
+    "Forensics": "포렌식",
+    "Reverse": "리버싱",
+    "CTF": "CTF",
+    "AI Agent": "AI 에이전트",
+    "Security": "보안"
+  };
+
+  return map[category] || category;
+}
+
+function safeEscape(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderFilters() {
   const bar = document.getElementById("filter-bar");
   if (!bar) return;
@@ -135,8 +227,8 @@ function renderFilters() {
   const filters = ["All", ...new Set(allProjects.map(getCategory))];
 
   bar.innerHTML = filters.map((name) => `
-    <button class="filter-btn ${name === currentFilter ? "active" : ""}" data-filter="${escapeHtml(name)}">
-      ${escapeHtml(name)}
+    <button class="filter-btn ${name === currentFilter ? "active" : ""}" data-filter="${safeEscape(name)}">
+      ${safeEscape(categoryLabel(name))}
     </button>
   `).join("");
 
@@ -158,48 +250,68 @@ function renderProjects() {
     ? allProjects
     : allProjects.filter((project) => getCategory(project) === currentFilter);
 
-  if (status) status.textContent = `loaded ${allProjects.length} projects from ./data/projects.json`;
+  if (status) {
+    status.textContent = currentLang === "ko"
+      ? `./data/projects.json에서 ${allProjects.length}개 프로젝트 로드 완료`
+      : `loaded ${allProjects.length} projects from ./data/projects.json`;
+  }
 
   grid.innerHTML = projects.map((project) => {
+    const localized = localProject(project);
     const category = getCategory(project);
-    const tags = (project.tags || []).slice(0, 6);
+    const tags = (localized.tags || []).slice(0, 6);
+    const likes = projectStats.likes?.[project.id] || 0;
+    const views = projectStats.views?.[project.id] || 0;
 
     return `
-      <article class="project-card" data-id="${escapeHtml(project.id)}">
-        <div class="project-meta">${escapeHtml(category)} / ${escapeHtml(project.id)}</div>
-        <h3>${escapeHtml(project.title)}</h3>
-        <p>${escapeHtml(project.description)}</p>
+      <article class="project-card" data-id="${safeEscape(project.id)}">
+        <div class="project-meta">${safeEscape(categoryLabel(category))} / ${safeEscape(project.id)}${likes ? ` / ♥ ${safeEscape(String(likes))}` : ""}${views ? ` / 👁 ${safeEscape(String(views))}` : ""}</div>
+        <h3>${safeEscape(localized.title)}</h3>
+        <p>${safeEscape(localized.description)}</p>
         <div class="tags">
-          ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+          ${tags.map((tag) => `<span>${safeEscape(tag)}</span>`).join("")}
+        </div>
+        <div class="project-actions">
+          <button type="button" class="like-button" data-like-id="${safeEscape(project.id)}">♥ ${safeEscape(String(likes))}</button>
         </div>
       </article>
     `;
   }).join("");
 
   grid.querySelectorAll(".project-card").forEach((card) => {
-    card.addEventListener("click", () => openProject(card.dataset.id));
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".like-button")) return;
+      openProject(card.dataset.id);
+    });
   });
+
+  attachLikeButtons();
 }
 
 function openProject(id) {
   const project = allProjects.find((p) => p.id === id);
   const modal = document.getElementById("modal");
   const body = document.getElementById("modal-body");
+
   if (!project || !modal || !body) return;
 
-  const tags = project.tags || [];
-  const content = project.content || project.summary || project.description || "";
+  const localized = localProject(project);
+  const tags = localized.tags || [];
+  const content = project.content || project.summary || localized.description || "";
+  const likes = projectStats.likes?.[project.id] || 0;
+  const views = projectStats.views?.[project.id] || 0;
 
   body.innerHTML = `
-    <div class="project-meta">${escapeHtml(getCategory(project))} / ${escapeHtml(project.id)}</div>
-    <h2>${escapeHtml(project.title)}</h2>
-    <p>${escapeHtml(project.description)}</p>
-    <div class="tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
+    <div class="project-meta">${safeEscape(categoryLabel(getCategory(project)))} / ${safeEscape(project.id)}${likes ? ` / ♥ ${safeEscape(String(likes))}` : ""}${views ? ` / 👁 ${safeEscape(String(views))}` : ""}</div>
+    <h2>${safeEscape(localized.title)}</h2>
+    <p>${safeEscape(localized.description)}</p>
+    <div class="tags">${tags.map((tag) => `<span>${safeEscape(tag)}</span>`).join("")}</div>
     <hr style="border-color: rgba(0,217,255,0.18); margin: 28px 0;">
-    <pre class="content-pre">${escapeHtml(content)}</pre>
+    <pre class="content-pre">${safeEscape(content)}</pre>
   `;
 
   modal.classList.remove("hidden");
+  recordProjectView(id);
 }
 
 async function loadProjects() {
@@ -221,6 +333,128 @@ async function loadProjects() {
   }
 }
 
+function getApiBaseUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const apiUrl = params.get("api");
+  if (apiUrl) return apiUrl.replace(/\/$/, "");
+  if (window.location.protocol.startsWith("http")) {
+    return `${window.location.origin}`;
+  }
+  return "http://localhost:8000";
+}
+
+async function apiPost(path, payload) {
+  const url = `${getApiBaseUrl()}${path}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`API error ${response.status}: ${errorBody}`);
+  }
+
+  return response.json();
+}
+
+async function recordProjectView(projectId) {
+  try {
+    await apiPost(`/stats/${encodeURIComponent(projectId)}/view`, {});
+    projectStats.views = projectStats.views || {};
+    projectStats.views[projectId] = (projectStats.views[projectId] || 0) + 1;
+    renderProjects();
+  } catch (error) {
+    console.warn("Project view tracking failed:", error);
+  }
+}
+
+function getUserId() {
+  let userId = localStorage.getItem("portfolio_user_id");
+  if (!userId) {
+    userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem("portfolio_user_id", userId);
+  }
+  return userId;
+}
+
+async function toggleProjectLike(projectId) {
+  try {
+    const response = await apiPost(`/stats/${encodeURIComponent(projectId)}/like`, {
+      user_id: getUserId()
+    });
+    projectStats.likes = projectStats.likes || {};
+    projectStats.likes[projectId] = response.likes;
+    const button = document.querySelector(`button[data-like-id="${projectId}"]`);
+    if (button) button.textContent = `♥ ${response.likes}`;
+    renderProjects();
+  } catch (error) {
+    console.warn("Project like failed:", error);
+  }
+}
+
+function attachLikeButtons() {
+  document.querySelectorAll("button[data-like-id]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const projectId = button.dataset.likeId;
+      if (projectId) toggleProjectLike(projectId);
+    });
+  });
+}
+
+async function loadGuestbook() {
+  const list = document.getElementById("guestbook-list");
+  if (!list) return;
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/guestbook?limit=10`);
+    if (!response.ok) throw new Error("guestbook fetch failed");
+    const entries = await response.json();
+    list.innerHTML = entries.map((entry) => `
+      <article class="guestbook-entry">
+        <strong>${safeEscape(entry.name)}</strong>
+        <span>${safeEscape(new Date(entry.created_at).toLocaleString())}</span>
+        <p>${safeEscape(entry.message)}</p>
+      </article>
+    `).join("");
+  } catch (error) {
+    list.innerHTML = currentLang === "ko"
+      ? "방명록을 불러오지 못했습니다."
+      : "Unable to load guestbook.";
+  }
+}
+
+async function submitGuestbook() {
+  const nameInput = document.getElementById("guestbook-name");
+  const messageInput = document.getElementById("guestbook-message");
+  if (!nameInput || !messageInput) return;
+
+  const name = nameInput.value.trim();
+  const message = messageInput.value.trim();
+  if (!name || !message) return;
+
+  try {
+    await apiPost("/guestbook", { name, message });
+    nameInput.value = "";
+    messageInput.value = "";
+    loadGuestbook();
+  } catch (error) {
+    alert(currentLang === "ko" ? "방명록 전송에 실패했습니다." : "Failed to send guestbook entry.");
+  }
+}
+
+async function loadProjectStats() {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/stats`);
+    if (!response.ok) throw new Error("failed to fetch stats");
+    projectStats = await response.json();
+  } catch (error) {
+    projectStats = { views: {}, likes: {}, liked_users: {} };
+  }
+}
+
 function addChatMessage(role, text) {
   const log = document.getElementById("chat-log");
   if (!log) return;
@@ -232,17 +466,54 @@ function addChatMessage(role, text) {
   log.scrollTop = log.scrollHeight;
 }
 
+const PROJECT_ALIAS_MAP = [
+  { id: "kitsunebi-auto-ctf-solver", keywords: ["ctf solver", "auto ctf solver", "자동 ctf 솔버", "ctf 솔버", "k!$un3b1"] },
+  { id: "kitsunebi-forensics", keywords: ["forensics ctf", "포렌식 ctf", "k!t$un3b1", "forensics", "포렌식"] },
+  { id: "d-plus", keywords: ["d+", "불법 웹사이트", "illegal website", "monitoring system", "모니터링"] },
+  { id: "cve-2026-41651-analysis", keywords: ["cve-2026-41651", "pack2theroot", "packagekit", "cve", "로컬 권한 상승"] },
+  { id: "linux-forensic-scenario", keywords: ["linux forensic", "linux 침해", "linux 포렌식", "forensic scenario", "uac", "ld.so.preload"] }
+];
+
+function findProjectByQuestion(question) {
+  const lower = question.toLowerCase();
+
+  for (const alias of PROJECT_ALIAS_MAP) {
+    if (alias.keywords.some((keyword) => lower.includes(keyword))) {
+      return allProjects.find((project) => project.id === alias.id);
+    }
+  }
+
+  return allProjects.find((project) => {
+    const title = (project.title || "").toLowerCase();
+    const description = (project.description || "").toLowerCase();
+    return lower.includes(project.id.toLowerCase()) || lower.includes(title) || lower.includes(description);
+  });
+}
+
+function formatProjectSummary(project) {
+  const localized = localProject(project);
+  const tags = (localized.tags || []).length ? `\nTags: ${(localized.tags || []).join(", ")}` : "";
+  return `${localized.title}: ${localized.description}${tags}`;
+}
+
 function makeChatReply(input) {
   const q = input.toLowerCase();
   const ko = currentLang === "ko";
+  const project = findProjectByQuestion(input);
   const projectNames = allProjects.length
     ? allProjects.map((p) => "- " + p.title).join("\n")
     : "- D+\n- Linux Forensic Scenario\n- CVE Analysis\n- K!$un3b1\n- K!t$un3b1 Forensics";
 
+  if (project) {
+    return ko
+      ? `이 프로젝트에 대해 설명드리면:\n${formatProjectSummary(project)}`
+      : `Here is the project information:\n${formatProjectSummary(project)}`;
+  }
+
   if (q.includes("project") || q.includes("ctf") || q.includes("\uD504\uB85C\uC81D\uD2B8")) {
     return ko
-      ? "\uD604\uC7AC \uD3EC\uD2B8\uD3F4\uB9AC\uC624\uC5D0\uB294 \uB2E4\uC74C \uD504\uB85C\uC81D\uD2B8\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.\n\n" + projectNames + "\n\n\uD504\uB85C\uC81D\uD2B8 \uCE74\uB4DC\uB97C \uB204\uB974\uBA74 \uC0C1\uC138 \uB0B4\uC6A9\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-      : "The portfolio currently contains these projects:\n\n" + projectNames + "\n\nClick a project card to view details.";
+      ? `현재 포트폴리오에는 다음 프로젝트가 등록되어 있습니다.\n\n${projectNames}\n\n원하시는 프로젝트 이름을 알려주시면 상세 설명을 드릴게요.`
+      : `The portfolio currently contains these projects:\n\n${projectNames}\n\nPlease tell me a project name for a detailed description.`;
   }
 
   if (q.includes("skill") || q.includes("stack") || q.includes("\uAE30\uC220") || q.includes("\uC2A4\uD0DD")) {
@@ -274,15 +545,26 @@ function setupChatWidget() {
   open.addEventListener("click", () => panel.classList.toggle("hidden"));
   close.addEventListener("click", () => panel.classList.add("hidden"));
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const text = input.value.trim();
     if (!text) return;
 
     addChatMessage("user", text);
     input.value = "";
+    addChatMessage("bot", currentLang === "ko" ? "응답 준비 중..." : "Preparing answer...");
 
-    setTimeout(() => addChatMessage("bot", makeChatReply(text)), 200);
+    try {
+      const result = await apiPost("/chat", { question: text });
+      const log = document.getElementById("chat-log");
+      if (log) log.lastChild?.remove();
+      addChatMessage("bot", result.answer || makeChatReply(text));
+    } catch (error) {
+      console.error("Chat API failed:", error);
+      const log = document.getElementById("chat-log");
+      if (log) log.lastChild?.remove();
+      addChatMessage("bot", makeChatReply(text));
+    }
   });
 }
 
@@ -312,6 +594,12 @@ function setupResumeDownload() {
 
     window.open(NOTION_RESUME_URL, "_blank");
   });
+}
+
+function setupGuestbook() {
+  const submit = document.getElementById("guestbook-submit");
+  if (!submit) return;
+  submit.addEventListener("click", submitGuestbook);
 }
 
 function setupModal() {
@@ -414,222 +702,19 @@ function setupCanvas() {
   drawNetwork();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("lang-toggle")?.addEventListener("click", switchLanguage);
 
   setupCanvas();
   setupModal();
   setupChatWidget();
   setupResumeDownload();
+  setupGuestbook();
 
   applyLanguage();
-  loadProjects();
+  await loadProjectStats();
+  await loadProjects();
+  await loadGuestbook();
 });
 
 
-// === PROJECT_LANG_PATCH_START ===
-const PROJECT_I18N_PATCH = {
-  ko: {
-    "cve-2026-41651-analysis": {
-      "title": "CVE-2026-41651 Pack2TheRoot \ubd84\uc11d",
-      "description": "PackageKit\uc758 TOCTOU \ub808\uc774\uc2a4 \ucee8\ub514\uc158\uc73c\ub85c \ubc1c\uc0dd\ud558\ub294 \ub85c\uceec \uad8c\ud55c \uc0c1\uc2b9 \ucde8\uc57d\uc810\uc744 \ubd84\uc11d\ud55c \ud504\ub85c\uc81d\ud2b8\uc785\ub2c8\ub2e4. \ubc84\uadf8 \uccb4\uc778, \uacf5\uaca9 \ud750\ub984, \uce68\ud574 \uc9c0\ud45c, \ud0d0\uc9c0 \uba85\ub839\uc5b4, \ub300\uc751 \ubc29\uc548\uc744 \uc815\ub9ac\ud588\uc2b5\ub2c8\ub2e4.",
-      "tags": ["CVE \ubd84\uc11d", "Linux", "\uad8c\ud55c \uc0c1\uc2b9", "PackageKit", "TOCTOU"]
-    },
-    "d-plus": {
-      "title": "D+ \ubd88\ubc95 \uc6f9\uc0ac\uc774\ud2b8 \ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc2a4\ud15c",
-      "description": "\ube14\ub799\ub9ac\uc2a4\ud2b8 \uc6f9\uc0ac\uc774\ud2b8 \ubc29\ubb38 \uae30\ub85d\uc744 \ubaa8\ub2c8\ud130\ub9c1\ud558\uace0, \uc218\uc9d1 \uae30\ub85d\uc744 \uc554\ud638\ud654\ud558\uc5ec \uad00\ub9ac\uc790 \ub300\uc2dc\ubcf4\ub4dc\ub85c \ubcf4\uace0\ud558\ub294 \ud300 \ud504\ub85c\uc81d\ud2b8\uc785\ub2c8\ub2e4. \uc800\ub294 \uc554\ud638\ud654 \ub85c\uc9c1\uacfc \ubc31\uc5d4\ub4dc \uad6c\ud604\uc744 \ub2f4\ub2f9\ud588\uc2b5\ub2c8\ub2e4.",
-      "tags": ["Python", "\ubc31\uc5d4\ub4dc", "\uc554\ud638\ud654", "SQLite", "AWS", "\ubcf4\uc548"]
-    },
-    "kitsunebi-auto-ctf-solver": {
-      "title": "K!$un3b1 \uc790\ub3d9 CTF \uc194\ubc84",
-      "description": "Claude Agent SDK\uc640 Opus 4.7 \uae30\ubc18\uc73c\ub85c CTF \ubb38\uc81c \ud30c\uc77c\uc744 \uc77d\uace0, \uc2a4\ud06c\ub9bd\ud2b8 \uc791\uc131\uacfc \ub3c4\uad6c \uc2e4\ud589\uc744 \ud1b5\ud574 \ud50c\ub798\uadf8\ub97c \uc790\ub3d9 \ucd94\ucd9c\u00b7\ucc44\uc810\ud558\ub294 \uc5d0\uc774\uc804\ud2b8\uc785\ub2c8\ub2e4.",
-      "tags": ["AI \uc5d0\uc774\uc804\ud2b8", "CTF", "\uc790\ub3d9\ud654", "Claude SDK", "Python"]
-    },
-    "kitsunebi-forensics": {
-      "title": "K!t$un3b1 \ud3ec\ub80c\uc2dd CTF \uc2e4\ud5d8",
-      "description": "\uc790\ub3d9 CTF \uc194\ubc84\ub97c \ud3ec\ub80c\uc2dd \ubd84\uc57c\uc5d0 \uc801\uc6a9\ud55c \ubca4\uce58\ub9c8\ud06c\uc785\ub2c8\ub2e4. \ud3ec\ub80c\uc2dd \ubb38\uc81c 20\uac1c \uc911 14\uac1c\ub97c \ud574\uacb0\ud558\uc5ec 70%\uc758 \ud574\uacb0\ub960\uacfc \ucd1d 26.15\ub2ec\ub7ec\uc758 \ube44\uc6a9\uc744 \uae30\ub85d\ud588\uc2b5\ub2c8\ub2e4.",
-      "tags": ["\ud3ec\ub80c\uc2dd", "CTF", "\ubca4\uce58\ub9c8\ud06c", "\uc790\ub3d9\ud654", "AI \uc5d0\uc774\uc804\ud2b8"]
-    },
-    "linux-forensic-scenario": {
-      "title": "Linux \uce68\ud574\uc0ac\uace0 \ud3ec\ub80c\uc2dd \uc2dc\ub098\ub9ac\uc624 \ubd84\uc11d",
-      "description": "UAC \uc544\ud2f0\ud329\ud2b8\ub97c \uae30\ubc18\uc73c\ub85c Linux \uc6cc\ucee4 \uc2dc\uc2a4\ud15c\uc758 SSH \uce68\ud22c, NOPASSWD sudo \uc545\uc6a9, ld.so.preload \ub8e8\ud2b8\ud0b7, \uc740\ub2c9 \ud504\ub85c\uc138\uc2a4, \uc778\uba54\ubaa8\ub9ac \ud398\uc774\ub85c\ub4dc \uc2e4\ud589\uc744 \ubd84\uc11d\ud55c \ud504\ub85c\uc81d\ud2b8\uc785\ub2c8\ub2e4.",
-      "tags": ["Linux \ud3ec\ub80c\uc2dd", "UAC", "\ub8e8\ud2b8\ud0b7", "\uce68\ud574\uc0ac\uace0 \ub300\uc751", "journalctl"]
-    }
-  },
-  en: {
-    "cve-2026-41651-analysis": {
-      "title": "CVE-2026-41651 Pack2TheRoot Analysis",
-      "description": "A vulnerability analysis project for PackageKit local privilege escalation caused by a TOCTOU race condition. The report covers the bug chain, exploit flow, IoCs, detection commands, and mitigation.",
-      "tags": ["CVE Analysis", "Linux", "LPE", "PackageKit", "TOCTOU"]
-    },
-    "d-plus": {
-      "title": "D+ Illegal Website Monitoring System",
-      "description": "A team project that monitors browser history for blacklisted websites and reports encrypted records to an admin dashboard. I worked on encryption and backend logic.",
-      "tags": ["Python", "Backend", "Encryption", "SQLite", "AWS", "Security"]
-    },
-    "kitsunebi-auto-ctf-solver": {
-      "title": "K!$un3b1 Auto CTF Solver",
-      "description": "An automated CTF-solving agent built with Claude Agent SDK and Opus 4.7. It reads challenge files, writes scripts, executes tools, extracts flags, and compares answers automatically across CTF categories.",
-      "tags": ["AI Agent", "CTF", "Automation", "Claude SDK", "Python"]
-    },
-    "kitsunebi-forensics": {
-      "title": "K!t$un3b1 Forensics CTF Experiment",
-      "description": "A forensics-focused benchmark for the automated CTF solver. The agent solved 14 out of 20 forensic challenges, achieving a 70 percent solve rate with a total cost of 26.15 dollars.",
-      "tags": ["Forensics", "CTF", "Benchmark", "Automation", "AI Agent"]
-    },
-    "linux-forensic-scenario": {
-      "title": "Linux Forensic Scenario Analysis",
-      "description": "A Linux incident response project based on UAC artifacts. The analysis covers SSH intrusion, NOPASSWD sudo abuse, ld.so.preload rootkit behavior, hidden processes, and suspicious in-memory payload execution.",
-      "tags": ["Linux Forensics", "UAC", "Rootkit", "Incident Response", "journalctl"]
-    }
-  }
-};
-
-function projectLang() {
-  return currentLang === "ko" ? "ko" : "en";
-}
-
-function localProject(project) {
-  const lang = projectLang();
-  const translated = PROJECT_I18N_PATCH[lang][project.id] || {};
-  return {
-    ...project,
-    title: translated.title || project.title,
-    description: translated.description || project.description,
-    tags: translated.tags || project.tags || []
-  };
-}
-
-function categoryLabel(category) {
-  if (currentLang !== "ko") return category;
-
-  const map = {
-    "All": "\uc804\uccb4",
-    "CVE": "CVE \ubd84\uc11d",
-    "Forensics": "\ud3ec\ub80c\uc2dd",
-    "Reverse": "\ub9ac\ubc84\uc2f1",
-    "CTF": "CTF",
-    "AI Agent": "AI \uc5d0\uc774\uc804\ud2b8",
-    "Security": "\ubcf4\uc548"
-  };
-
-  return map[category] || category;
-}
-
-function renderFilters() {
-  const bar = document.getElementById("filter-bar");
-  if (!bar) return;
-
-  const filters = ["All", ...new Set(allProjects.map(getCategory))];
-
-  bar.innerHTML = filters.map((name) => `
-    <button class="filter-btn ${name === currentFilter ? "active" : ""}" data-filter="${safeEscape(name)}">
-      ${safeEscape(categoryLabel(name))}
-    </button>
-  `).join("");
-
-  bar.querySelectorAll(".filter-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentFilter = btn.dataset.filter;
-      renderFilters();
-      renderProjects();
-    });
-  });
-}
-
-function safeEscape(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderProjects() {
-  const grid = document.getElementById("project-grid");
-  const status = document.getElementById("project-status");
-  if (!grid) return;
-
-  const projects = currentFilter === "All"
-    ? allProjects
-    : allProjects.filter((project) => getCategory(project) === currentFilter);
-
-  if (status) {
-    status.textContent = currentLang === "ko"
-      ? `./data/projects.json\uc5d0\uc11c ${allProjects.length}\uac1c \ud504\ub85c\uc81d\ud2b8 \ub85c\ub4dc \uc644\ub8cc`
-      : `loaded ${allProjects.length} projects from ./data/projects.json`;
-  }
-
-  grid.innerHTML = projects.map((project) => {
-    const localized = localProject(project);
-    const category = getCategory(project);
-    const tags = (localized.tags || []).slice(0, 6);
-
-    return `
-      <article class="project-card" data-id="${safeEscape(project.id)}">
-        <div class="project-meta">${safeEscape(categoryLabel(category))} / ${safeEscape(project.id)}</div>
-        <h3>${safeEscape(localized.title)}</h3>
-        <p>${safeEscape(localized.description)}</p>
-        <div class="tags">
-          ${tags.map((tag) => `<span>${safeEscape(tag)}</span>`).join("")}
-        </div>
-      </article>
-    `;
-  }).join("");
-
-  grid.querySelectorAll(".project-card").forEach((card) => {
-    card.addEventListener("click", () => openProject(card.dataset.id));
-  });
-}
-
-function openProject(id) {
-  const project = allProjects.find((p) => p.id === id);
-  const modal = document.getElementById("modal");
-  const body = document.getElementById("modal-body");
-
-  if (!project || !modal || !body) return;
-
-  const localized = localProject(project);
-  const tags = localized.tags || [];
-  const content = project.content || project.summary || localized.description || "";
-
-  body.innerHTML = `
-    <div class="project-meta">${safeEscape(categoryLabel(getCategory(project)))} / ${safeEscape(project.id)}</div>
-    <h2>${safeEscape(localized.title)}</h2>
-    <p>${safeEscape(localized.description)}</p>
-    <div class="tags">${tags.map((tag) => `<span>${safeEscape(tag)}</span>`).join("")}</div>
-    <hr style="border-color: rgba(0,217,255,0.18); margin: 28px 0;">
-    <pre class="content-pre">${safeEscape(content)}</pre>
-  `;
-
-  modal.classList.remove("hidden");
-}
-
-function switchLanguage() {
-  currentLang = currentLang === "ko" ? "en" : "ko";
-  localStorage.setItem("portfolio_lang", currentLang);
-
-  applyLanguage();
-  renderFilters();
-  renderProjects();
-}
-
-(function forceInitialLangFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const lang = params.get("lang");
-
-  if (lang === "ko" || lang === "en") {
-    currentLang = lang;
-    localStorage.setItem("portfolio_lang", lang);
-  }
-})();
-
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    applyLanguage();
-    renderFilters();
-    renderProjects();
-  }, 100);
-});
-// === PROJECT_LANG_PATCH_END ===

@@ -269,7 +269,64 @@ h2 {
   font-size: 12px;
   margin-bottom: 12px;
 }
+.project-actions {
+  margin-top: 18px;
+}
 
+.like-button {
+  cursor: pointer;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 217, 255, 0.24);
+  background: rgba(0, 217, 255, 0.08);
+  color: #bfefff;
+  font-weight: 700;
+}
+
+.guestbook-panel {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1.4fr;
+  align-items: start;
+}
+
+.guestbook-form {
+  display: grid;
+  gap: 12px;
+}
+
+.guestbook-form input,
+.guestbook-form textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(0, 217, 255, 0.18);
+  background: rgba(0, 0, 0, 0.55);
+  color: #e8fbff;
+  font-family: inherit;
+}
+
+.guestbook-list {
+  display: grid;
+  gap: 14px;
+}
+
+.guestbook-entry {
+  padding: 18px;
+  border: 1px solid rgba(0, 217, 255, 0.18);
+  background: rgba(0, 0, 0, 0.64);
+}
+
+.guestbook-entry strong {
+  display: block;
+  color: #00d9ff;
+  margin-bottom: 6px;
+}
+
+.guestbook-entry span {
+  display: block;
+  color: #8fb8c4;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
 .timeline {
   display: grid;
   gap: 18px;
