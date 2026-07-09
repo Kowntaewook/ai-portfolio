@@ -143,6 +143,7 @@ async def startup_event():
     print("🚀 RAG 엔진 초기화 중...")
 
     # RAG 엔진 빌드
+    persist_directory = os.getenv("CHROMA_DIR", "/tmp/chroma_db" if os.getenv("VERCEL") else "./chroma_db")
     rag_engine = build_rag_engine(
         projects_json_path=projects_json,
         gemini_api_key=gemini_api_key,
@@ -150,7 +151,7 @@ async def startup_event():
         top_k=2,
         chunk_size=1000,
         chunk_overlap=0,
-        persist_directory="./chroma_db"
+        persist_directory=persist_directory
     )
 
     print("✅ RAG 엔진 준비 완료!")
